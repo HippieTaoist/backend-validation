@@ -1,10 +1,6 @@
 const User = require("../model/User")
 var validator = require('validator');
-
 const bcrypt = require('bcryptjs');
-
-
-
 
 async function createUser(req, res) {
     const {
@@ -18,28 +14,28 @@ async function createUser(req, res) {
     let errObj = {};
 
     for (let key in body) {
-        if (isEmpty(body[key])) {
+        if (validator.isEmpty(body[key])) {
             errObj[`${key}`] = `${key} cannot be empty`;
         }
     }
 
-    if (!isAlpha(firstName)) {
+    if (!validator.isAlpha(firstName)) {
         errObj.firstName = "First Name cannot have special characters or numbers";
     }
 
-    if (!isAlpha(lastName)) {
+    if (!validator.isAlpha(lastName)) {
         errObj.lastName = "Last Name cannot have special characters or numbers";
     }
 
-    if (!isAlphanumeric(username)) {
+    if (!validator.isAlphanumeric(username)) {
         errObj.username = "Username cannot have special characters";
     }
 
-    if (!isEmail(email)) {
+    if (!validator.isEmail(email)) {
         errObj.email = "please enter a valid email";
     }
 
-    if (!isStrongPassword(password)) {
+    if (!validator.isStrongPassword(password)) {
         errObj.password =
             "Your password must contain 1 lowercase, 1 uppercase, 1 number, 1 special character and at least 8 characters long";
     }
@@ -78,23 +74,25 @@ async function createUser(req, res) {
     }
 }
 
-async function authenticate(email, password) {
+async function isPasswordMatch(email, password) {
     let errObj = {};
     const account = await User.findOne({
         email
     });
 
     if (!account) {
+
+
         errObj.email = "Email not found, please check spelling."
 
-    }
+    } else {
 
-    if (!bcrypt.compareSync(password, account.password)) {
-        errObj.password = "Password incorrect, please try again.";
+        if (!bcrypt.compareSync(password, account.password)) {
+            errObj.password = "Password incorrect, please try again.";
+        }
     }
-
     if (errObj.length > 0) {
-        return (errObj)
+        return errObj
     } else {
         return errObj;
     }
@@ -107,9 +105,9 @@ async function userLogin(req, res) {
         password
     } = req.body;
 
-    let authenticate = authenticate(email, password);
+    let authenticate = await isPasswordMatch(email, password);
 
-    console.log("Line 110 - authenticate -", authenticate)
+    console.log("Line 116 - authenticate -", authenticate)
 
     if (Object.keys(authenticate).length > 0) {
 
@@ -117,10 +115,12 @@ async function userLogin(req, res) {
             message: "error",
             error: authenticate,
         });
-
     }
 
+
     try {
+
+
         res.json({
             message: "Successful login!",
         })
